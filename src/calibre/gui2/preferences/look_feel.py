@@ -154,6 +154,7 @@ class ConfigWidget(ConfigWidgetBase, Ui_Form):
         r('cover_browser_reflections', gprefs)
         r('show_rating_in_cover_browser', gprefs)
         r('extra_row_spacing', gprefs)
+        r('book_list_extra_row_spacing', gprefs)
 
         def get_esc_lang(l):
             if l == 'en':
