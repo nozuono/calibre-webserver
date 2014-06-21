@@ -389,13 +389,13 @@ class ToolbarSettings(QWidget):
         prefs = prefs or tprefs
         val = self.original_settings = {}
         for i in xrange(1, self.bars.count()):
-            name = unicode(self.bars.itemData(i).toString())
+            name = unicode(self.bars.itemData(i) or '')
             val[name] = copy(prefs[name])
         self.current_settings = deepcopy(val)
 
     @property
     def current_name(self):
-        return unicode(self.bars.itemData(self.bars.currentIndex()).toString())
+        return unicode(self.bars.itemData(self.bars.currentIndex()) or '')
 
     def build_lists(self):
         self.available.clear(), self.current.clear()
@@ -466,7 +466,7 @@ class ToolbarSettings(QWidget):
             s = self.current_settings[self.current_name]
         except KeyError:
             return
-        names = [unicode(i.data(Qt.UserRole).toString()) for i in self.available.selectedItems()]
+        names = [unicode(i.data(Qt.UserRole) or '') for i in self.available.selectedItems()]
         if not names:
             return
         for n in names:
