@@ -8,14 +8,14 @@ from PyQt5.Qt import (QThread, pyqtSignal, Qt, QUrl, QDialog, QGridLayout,
 import mechanize
 
 from calibre.constants import (__appname__, __version__, iswindows, isosx,
-        isportable, is64bit)
+        isportable, is64bit, numeric_version)
 from calibre import browser, prints, as_unicode
 from calibre.utils.config import prefs
 from calibre.gui2 import config, dynamic, open_url
 from calibre.gui2.dialogs.plugin_updater import get_plugin_updates_available
 
 URL = 'http://status.calibre-ebook.com/latest'
-#URL = 'http://localhost:8000/latest'
+# URL = 'http://localhost:8000/latest'
 NO_CALIBRE_UPDATE = '-0.0.0'
 VSEP = '|'
 
@@ -155,7 +155,8 @@ class UpdateMixin(object):
             traceback.print_exc()
             return
         self.last_newest_calibre_version = calibre_version
-        has_calibre_update = calibre_version and calibre_version != NO_CALIBRE_UPDATE
+        is_beta = numeric_version[0] == 1 and numeric_version[1] >= 900
+        has_calibre_update = calibre_version and calibre_version != NO_CALIBRE_UPDATE and not is_beta
         has_plugin_updates = plugin_updates > 0
         self.plugin_update_found(plugin_updates)
 
