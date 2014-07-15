@@ -341,6 +341,11 @@
   </action>
  </widget>
  <customwidgets>
+       <customwidget>
+           <class>QWebView</class>
+           <extends>QWidget</extends>
+           <header>PyQt5/QtWebKitWidgets</header>
+       </customwidget>
   <customwidget>
    <class>DocumentView</class>
    <extends>QWidget</extends>
