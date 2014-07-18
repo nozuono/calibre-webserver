@@ -212,7 +212,7 @@ class HtmlServer(object):
         return self.html_page('content_server/book/add.html', vars())
 
     @cherrypy.expose
-    def book_upload(self, generate_fmt=True, ebook_file=None):
+    def book_upload(self, generate_fmt=False, ebook_file=None):
         from calibre.ebooks.metadata import MetaInformation
         cherrypy.response.timeout = 3600
 
