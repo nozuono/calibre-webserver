@@ -61,6 +61,7 @@ class HtmlServer(object):
         connect( '/book/{id}/delete',       self.book_delete)
         connect( '/book/{id}/edit',         self.book_edit)
         connect( '/book/{id}/update',       self.book_update)
+        connect( '/book/{id}/rating',       self.book_rating)
         connect( '/book/{id}.{fmt}',        self.book_download)
         connect( '/book/{id}/push',         self.book_push)
         connect( '/book/{id}',              self.book_detail)
@@ -206,6 +207,20 @@ class HtmlServer(object):
 
         book_id = self.do_book_update(id)
         raise cherrypy.HTTPRedirect('/book/%d'%book_id, 302)
+
+    @cherrypy.expose
+    @cherrypy.tools.allow(methods=['POST'])
+    def book_rating(self, id, rating):
+        try:
+            r = int(rating)
+        except:
+            return json.dumps({'ecode': 2, 'msg': _("rating vlaue error!")})
+
+        book_id = int(id)
+        mi = self.db.get_metadata(book_id, index_is_id=True)
+        mi.rating = r
+        self.db.set_metadata(book_id, mi)
+        return json.dumps({'ecode': 0, 'msg': _('update rating success')})
 
     @cherrypy.expose
     def book_edit(self, id, field, content):

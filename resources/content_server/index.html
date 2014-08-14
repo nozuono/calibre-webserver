@@ -6,7 +6,10 @@
     <div class="col-xs-6 col-sm-3">
             <a href="/book/{{book.id}}"><img class="random-book-img" src="/get/thumb_155_220/{{book.id}}.jpg" alt="cover"/></a>
             <div class="caption">
-                <span><input type="number" class="rating" value="{%if book.rating%}{{book.rating}}{%endif%}" data-min=0 data-max=10 data-size="xs" ></span>
+                <span><input type="number" class="rating"
+                    onchange="update_rating(this, {{book.id}});"
+                    value="{%if book.rating%}{{book.rating}}{%endif%}"
+                    data-min=0 data-max=10 data-size="xs" ></span>
                 <h5><a class="book-title" href="/book/{{book.id}}">{{book.title}}</a></h5>
             </div>
     </div>

@@ -43,4 +43,21 @@ function bind_book_editable(book_id) {
     $(".book-edit").addClass("book-edit-orig");
 }
 
+function update_rating(where, book_id) {
+    r = $(where).val();
+    $.ajax({
+        url: "/book/"+book_id+"/rating",
+        type: 'POST',
+        data: {rating: r},
+        dataType: 'json',
+        success: function(rsp) {
+            if ( rsp.ecode != 0 ) {
+                alert(rsp.msg);
+            }
+        },
+        error: function(data) {
+            alert("error happen!");
+        }
+    });
+}
 

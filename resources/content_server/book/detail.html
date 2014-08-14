@@ -11,7 +11,7 @@
 {% if msg %}
 <div class="alert alert-{{status}} alert-dismissible" role="alert">
     <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-    {{ msg|urlencode }}
+    {{ msg }}
 </div>
 {% endif %}
 {% endblock %}
@@ -20,7 +20,7 @@
 <div class="row">
     <div class="col-md-12">
         <div class="center-block">
-            <h1 class="book-edit" data-meta="title">{{book.title}}</h1>
+            <h1 class="text-center book-edit" data-meta="title">{{book.title}}</h1>
         </div>
 
         <div class="media">
@@ -63,6 +63,12 @@
                 {% if book.isbn %} {{ gettext("ISBN: ") }}
                 <span class="book-edit" data-meta="isbn">{{book.isbn}}</span><br/>
                 {% endif %}
+
+                {{ gettext("Rate: ") }}
+                <span style="display: inline-block"><input type="number" class="rating"
+                    onchange="update_rating(this, {{book.id}})"
+                    value="{%if book.rating%}{{book.rating}}{%endif%}"
+                    data-min=0 data-max=10 data-size="xs" ></span><br/>
 
                 </p>
             </div>
