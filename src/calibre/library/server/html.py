@@ -8,6 +8,7 @@ __docformat__ = 'restructuredtext en'
 import re, os, posixpath, cherrypy, cgi, tempfile, logging, sys, json
 from calibre.ebooks.metadata.meta import get_metadata
 
+from urllib import urlencode
 from calibre import fit_image, guess_type
 from calibre.utils.date import fromtimestamp
 from calibre.utils.smtp import sendmail, create_mail
@@ -21,6 +22,8 @@ from calibre.ebooks.metadata import authors_to_string
 from calibre.ebooks.conversion.plumber import Plumber
 from calibre.library.caches import SortKeyGenerator
 from calibre.library.save_to_disk import find_plugboard
+
+import douban
 
 plugboard_content_server_value = 'content_server'
 plugboard_content_server_formats = ['epub']
@@ -39,6 +42,12 @@ def T(name):
     env.filters['day'] = day_format
     return env.get_template(name)
 
+def JsonResponse(func):
+    def do(*args, **kwrags):
+        rsp = func(*args, **kwargs)
+        return json.dumps(rsp)
+    return do
+
 class HtmlServer(object):
     '''
     Handles actually serving content files/covers/metadata. Also has
@@ -51,15 +60,18 @@ class HtmlServer(object):
         connect( '/book/upload',            self.book_upload)
         connect( '/book/{id}/delete',       self.book_delete)
         connect( '/book/{id}/edit',         self.book_edit)
+        connect( '/book/{id}/update',       self.book_update)
         connect( '/book/{id}.{fmt}',        self.book_download)
-        connect( '/book/{id}/share/kindle', self.share_kindle)
+        connect( '/book/{id}/push',         self.book_push)
         connect( '/book/{id}',              self.book_detail)
         connect( '/author',                 self.author_list)
         connect( '/author/{name}',          self.author_detail)
+        connect( '/author/{name}/update',   self.author_books_update)
         connect( '/tag',                    self.tag_list)
         connect( '/tag/{name}',             self.tag_detail)
         connect( '/pub',                    self.pub_list)
         connect( '/pub/{name}',             self.pub_detail)
+        connect( '/pub/{name}/update',      self.pub_books_update)
         connect( '/rating',                 self.rating_list)
         connect( '/rating/{name}',          self.rating_detail)
         connect( '/search',                 self.search_book)
@@ -75,6 +87,7 @@ class HtmlServer(object):
         url_prfix = self.opts.url_prefix
         M = "/static/m"
         db = self.db
+        request = cherrypy.request
         vals = dict(*args, **kwargs)
         vals.update( vars() )
         ans = T(template).render(vals)
@@ -124,7 +137,12 @@ class HtmlServer(object):
         ids = self.search_for_books('')
         if not ids:
             raise cherrypy.HTTPError(404, 'This library has no books')
+        random_ids = random.sample(ids, 4)
+        random_books = self.db.get_data_as_dict(ids=random_ids)
+        new_ids = random.sample(ids[:40], 8)
+        new_books = self.db.get_data_as_dict(ids=new_ids)
 
+        '''
         books = self.db.get_data_as_dict(ids=ids)
         self.sort_books(books, 'datetime')
         books.reverse()
@@ -133,6 +151,7 @@ class HtmlServer(object):
             random_books = random.sample(books, 4)
         except:
             pass
+        '''
         return self.html_page('content_server/index.html', vars())
 
     @cherrypy.expose
@@ -158,7 +177,7 @@ class HtmlServer(object):
         vars_.update(vars())
         return self.html_page('content_server/book/list.html', vars_)
 
-    def book_detail(self, id):
+    def book_detail(self, id, status="", msg=""):
         book_id = int(id)
         books = self.db.get_data_as_dict(ids=[book_id])
         if not books:
@@ -168,6 +187,25 @@ class HtmlServer(object):
         except: sizes = []
         title = book['title']
         return self.html_page('content_server/book/detail.html', vars())
+
+    def do_book_update(self, id):
+        book_id = int(id)
+        mi = self.db.get_metadata(book_id, index_is_id=True)
+        douban_mi = douban.get_douban_metadata(mi.title)
+        if mi.cover_data[0]:
+            douban_mi.cover_data = None
+        mi.smart_update(douban_mi, replace_metadata=True)
+        self.db.set_metadata(book_id, mi)
+        return book_id
+
+    @cherrypy.expose
+    @cherrypy.tools.allow(methods=['POST'])
+    def book_update(self, id, exam_id):
+        if exam_id != id:
+            raise cherrypy.HTTPError(403, 'Book exam id error')
+
+        book_id = self.do_book_update(id)
+        raise cherrypy.HTTPRedirect('/book/%d'%book_id, 302)
 
     @cherrypy.expose
     def book_edit(self, id, field, content):
@@ -188,8 +226,9 @@ class HtmlServer(object):
         self.db.set_metadata(book_id, mi)
         return json.dumps({'ecode': 0, 'msg': _("edit OK")})
 
+    @cherrypy.tools.allow(methods=['POST'])
     def book_delete(self, id):
-        self.db.delete_book(int(id))
+        #self.db.delete_book(int(id))
         raise cherrypy.HTTPRedirect("/book", 302)
 
     def book_download(self, id, fmt):
@@ -212,7 +251,7 @@ class HtmlServer(object):
         return self.html_page('content_server/book/add.html', vars())
 
     @cherrypy.expose
-    def book_upload(self, generate_fmt=False, ebook_file=None):
+    def book_upload(self, ebook_file=None):
         from calibre.ebooks.metadata import MetaInformation
         cherrypy.response.timeout = 3600
 
@@ -286,6 +325,17 @@ class HtmlServer(object):
         books = self.db.get_data_as_dict(ids=ids)
         return self.render_book_list(books, start, sort, vars());
 
+    @cherrypy.expose
+    @cherrypy.tools.allow(methods=['POST'])
+    def author_books_update(self, name):
+        cherrypy.response.timeout = 3600
+        category = "authors"
+        author_id = self.db.get_author_id(name)
+        ids = self.db.get_books_for_category(category, author_id)
+        for book_id in list(ids)[:40]:
+            self.do_book_update(book_id)
+        raise cherrypy.HTTPRedirect('/author/%s'%name, 302)
+
     def pub_list(self):
         title = _('All publishers')
         category = "publisher"
@@ -305,6 +355,24 @@ class HtmlServer(object):
             books = self.db.get_data_as_dict(ids=ids)
             books = [ b for b in books if not b['publisher'] ]
         return self.render_book_list(books, start, sort, vars());
+
+    @cherrypy.expose
+    def pub_books_update(self, name):
+        cherrypy.response.timeout = 3600
+        category = "authors"
+        author_id = self.db.get_author_id(name)
+        ids = self.db.get_books_for_category(category, author_id)
+        category = "publisher"
+        publisher_id = self.db.get_publisher_id(name)
+        if publisher_id:
+            ids = self.db.get_books_for_category(category, publisher_id)
+        else:
+            ids = self.search_for_books('')
+            books = self.db.get_data_as_dict(ids=ids)
+            ids = [ b['id'] for b in books if not b['publisher'] ]
+        for book_id in list(ids)[:40]:
+            self.do_book_update(book_id)
+        raise cherrypy.HTTPRedirect('/pub/%s'%name, 302)
 
     def rating_list(self):
         title = _('All ratings')
@@ -339,8 +407,9 @@ class HtmlServer(object):
         msg = _('Saved success!')
         return self.html_page('content_server/setting/view.html', vars())
 
-    def share_kindle(self, id, fmt="mobi"):
-        mail_to = self.db.prefs.get('share_kindle', None)
+    @cherrypy.expose
+    @cherrypy.tools.allow(methods=['POST'])
+    def book_push(self, id, mail_to=None):
         if not mail_to:
             raise cherrypy.HTTPRedirect("/setting", 302)
 
@@ -351,7 +420,7 @@ class HtmlServer(object):
         book = books[0]
 
         # check format
-        for fmt in ['mobi', 'azw']:
+        for fmt in ['mobi', 'azw', 'pdf']:
             fpath = book.get("fmt_%s" % fmt, None)
             if fpath:
                 return self.do_send_mail(book, mail_to, fmt, fpath)
@@ -384,22 +453,27 @@ class HtmlServer(object):
         mail_from = 'mailer@calibre-ebook.com'
         mail_subject = _('Book from Calibre: %(title)s') % vars()
         mail_body = _('We Send this book to your kindle.')
-        success_msg = error_msg = None
+        status = msg = ""
         try:
             msg = create_mail(mail_from, mail_to, mail_subject,
                     text = mail_body, attachment_data = body,
                     attachment_type = mt, attachment_name = fname
                     )
             sendmail(msg, from_=mail_from, to=[mail_to], timeout=30)
-            success_msg = _('Send to kindle success!! email: %(mail_to)s') % vars()
+            status = "success"
+            msg = _('Send to kindle success!! email: %(mail_to)s') % vars()
         except:
             import traceback
             cherrypy.log.error('Failed to generate cover:')
             cherrypy.log.error(traceback.format_exc())
-            error_msg = traceback.format_exc()
+            status = "danger"
+            msg = traceback.format_exc()
 
         title = _('Send to kindle')
-        return self.html_page('content_server/share/email.html', vars())
+        q = urlencode({'status': status, 'msg': msg})
+        raise cherrypy.HTTPRedirect("/book/%d?%s"%(book['id'],q), 302)
+        #raise cherrypy.InternalRedirect('/book/%d'%book['id'], q)
+        #return self.html_page('content_server/share/email.html', vars())
 
 
     # Utility methods {{{

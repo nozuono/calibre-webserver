@@ -53,8 +53,8 @@ def expose(func):
             self.db.check_if_modified()
         ans = func(*args, **kwargs)
         if self.opts.develop:
-            prints('Function', func.__name__, 'called with args:', args, kwargs)
-            prints('\tTime:', func.__name__, time.time()-start)
+            #prints('Function: ', func.__name__, '(', args, kwargs, ')')
+            prints('\tTime:', func.__name__ + "()",  time.time()-start)
         return ans
 
     return do

@@ -8,6 +8,7 @@
 {% endif %}
 
 <form action="/setting/save" method="POST" role="form">
+    <!--
     <div class="col-sm-12">
         <span class="legend">{{ gettext("Push") }}</span>
     </div>
@@ -18,6 +19,7 @@
         </div>
     </div>
     <p>&nbsp;</p>
+    -->
     <div class="col-sm-12">
         <span class="legend">{{ gettext("Management") }}</span>
     </div>
@@ -28,12 +30,14 @@
                 {{ gettext("Allow online ebook management") }}
             </label>
         </div>
+        {% if 0 %}
         <div class="checkbox">
             <label>
                 <input {%if db.prefs.allow_delete %} checked=checked {% endif %} name="allow_delete" type="checkbox">
                 {{ gettext("Allow delete ebook") }}
             </label>
         </div>
+        {% endif %}
     </div>
     <div class="col-sm-4 col-sm-offset-4">
         <p>&nbsp;</p>

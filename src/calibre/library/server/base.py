@@ -11,6 +11,8 @@ from logging.handlers import RotatingFileHandler
 
 import cherrypy
 from cherrypy.process.plugins import SimplePlugin
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 from calibre.constants import __appname__, __version__
 from calibre.utils.date import fromtimestamp
@@ -18,6 +20,7 @@ from calibre.library.server import listen_on, log_access_file, log_error_file
 from calibre.library.server.utils import expose, AuthController
 from calibre.utils.mdns import publish as publish_zeroconf, \
             unpublish as unpublish_zeroconf, get_external_ip, verify_ipV4_address
+from calibre.library.server.auth import AuthServer, FuckUser, BuildAuthSession
 from calibre.library.server.html import HtmlServer
 from calibre.library.server.xml import XMLServer
 from calibre.library.server.opds import OPDSServer
@@ -25,6 +28,8 @@ from calibre.library.server.cache import Cache
 from calibre import prints, as_unicode
 from calibre.utils.localization import get_all_translators
 
+
+AUTH_SESSION = BuildAuthSession()
 
 class DispatchController(object):  # {{{
 
@@ -122,7 +127,7 @@ cherrypy.engine.bonjour = BonJour(cherrypy.engine)
 # }}}
 
 
-class LibraryServer(HtmlServer, XMLServer, OPDSServer, Cache):
+class LibraryServer(AuthServer, HtmlServer, XMLServer, OPDSServer, Cache):
 
     server_name = __appname__ + '/' + __version__
 
@@ -153,6 +158,11 @@ class LibraryServer(HtmlServer, XMLServer, OPDSServer, Cache):
         self.last_lang = "en"
         self.all_langs = dict(get_all_translators())
         cherrypy.request.hooks.attach('before_handler', self.update_lang)
+        cherrypy.request.hooks.attach('before_handler', self.load_user)
+        cherrypy.request.hooks.attach('on_end_resource', self.save_session)
+
+        #cherrypy.tools.authenticate = cherrypy.Tool('before_handler', self.load_user)
+        #cherrypy.tools.session = cherrypy.Tool('on_end_resource', self.save_session)
 
         Cache.__init__(self)
 
@@ -173,7 +183,26 @@ class LibraryServer(HtmlServer, XMLServer, OPDSServer, Cache):
             'server.socket_timeout'  : opts.timeout,  # seconds
             'server.thread_pool'     : opts.thread_pool,  # number of threads
             'server.shutdown_timeout': st,  # minutes
-        })
+            'tools.sessions.on' : True,
+            #'tools.sessions.storage_type': 'ram',
+            'tools.sessions.timeout': 60, # Session times out after 60 minutes
+            'tools.sessions.storage_type': "file",
+            'tools.sessions.storage_path': "/tmp/cherrypy/",
+            'SOCIAL_AUTH_USER_MODEL': 'calibre.library.server.auth.FuckUser',
+            'SOCIAL_AUTH_LOGIN_URL': '/auth/',
+            'SOCIAL_AUTH_LOGIN_REDIRECT_URL': '/',
+            'SOCIAL_AUTH_AUTHENTICATION_BACKENDS': (
+                'social.backends.douban.DoubanOAuth',
+                'social.backends.douban.DoubanOAuth2',
+            ),
+            'SOCIAL_AUTH_DOUBAN_OAUTH2_KEY': '0111ff0769f613750335fd163de23a5f',
+            'SOCIAL_AUTH_DOUBAN_OAUTH2_SECRET': 'a6b3870a603ba1c0',
+        });
+        import sys
+        from jinja2 import Environment, FileSystemLoader
+        loader = FileSystemLoader(sys.resources_location)
+        env = Environment(loader=loader, extensions=['jinja2.ext.i18n'])
+        cherrypy.tools.jinja2env = env
         if embedded or wsgi:
             cherrypy.config.update({'engine.SIGHUP'          : None,
                                     'engine.SIGTERM'         : None,})
@@ -182,10 +211,6 @@ class LibraryServer(HtmlServer, XMLServer, OPDSServer, Cache):
         self.exception = None
         auth_controller = None
         self.users_dict = {}
-        # self.config['/'] = {
-        #    'tools.sessions.on' : True,
-        # 'tools.sessions.timeout': 60, # Session times out after 60 minutes
-        #}
 
         if not wsgi:
             self.setup_loggers()
@@ -211,6 +236,18 @@ class LibraryServer(HtmlServer, XMLServer, OPDSServer, Cache):
         root_conf['request.dispatch'] = self.__dispatcher__.dispatcher
         self.config['/'] = root_conf
 
+    def load_user(self):
+        cherrypy.request.db = AUTH_SESSION
+        #cherrypy.log.error("load: session=" + repr(cherrypy.session.items()) )
+        user_id = cherrypy.session.get('user_id')
+        if user_id:
+            cherrypy.request.user = cherrypy.request.db.query(FuckUser).get(user_id)
+        else:
+            cherrypy.request.user = None
+
+    def save_session(self):
+        #cherrypy.log.error("save: session=" + repr(cherrypy.session.items()) )
+        cherrypy.session.save()
 
     def update_lang(self):
         user_langs = [x.value.replace('-', '_') for x in
@@ -225,8 +262,8 @@ class LibraryServer(HtmlServer, XMLServer, OPDSServer, Cache):
                 loc = self.all_langs[lang]
                 loc.install(unicode=True, names=('ngettext',))
                 cherrypy.response.i18n = loc
-                if sessions_on:
-                    cherrypy.session['_lang_'] = str(loc.locale)
+                #if sessions_on:
+                    #cherrypy.session['_lang_'] = str(loc.locale)
                 self.last_lang = lang
                 return
 

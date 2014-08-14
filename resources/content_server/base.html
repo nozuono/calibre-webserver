@@ -8,7 +8,7 @@
         <link href="{{M}}/css/star-rating.css" rel="stylesheet">
         <link href="{{M}}/css/calibre.css" rel="stylesheet">
         <!- [if IE]><script src="{{M}}/js/respond.js"></script><![endif]->
-        <title>{% if title %}{{title}} - {%endif%}Calibre</title>
+        <title>{% if title %}{{title}} - {%endif%}云书架</title>
     </head>
 
     <body>
@@ -22,12 +22,13 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand logo" href="/">Calibre</a>
+                <a class="navbar-brand logo" href="/">云书架</a>
             </div>
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav">
                     <li {%if not nav %}class="active"{%endif%} ><a href="/">{{ gettext("Library")}}</a></li>
-                    <li {%if nav == "setting"%}class="active"{%endif%} ><a href="/setting">{{ gettext("Setting")}}</a></li>
+                    <li ><a href="/blog">{{ gettext("Blog")}}</a></li>
+                    <!--<li {%if nav == "setting"%}class="active"{%endif%} ><a href="/setting">{{ gettext("Setting")}}</a></li>-->
                 </ul>
                 <form class="hidden-xs navbar-form navbar-left" action="/search" role="search">
                     <div class="form-group">
@@ -36,8 +37,17 @@
                     <button type="submit" class="btn btn-default">{{ gettext("Search") }}</button>
                 </form>
                 <a class="pull-right btn navbar-btn btn-primary" href="/book/add"><span class="glyphicon glyphicon-cloud-upload"></span> {{ gettext("Upload Book") }}</a>
+                {% if request.user %}
+                <a href="#"><img src="http://img3.douban.com/pics/douban-icons/favicon_24x24.png" /> {{ request.user.username }}</a>
+                {% else %}
+                <a class="pull-right btn" style="margin-top: 1px" target="_blank" href="/auth/login/douban-oauth2">
+                    <img src="http://img3.douban.com/pics/douban-icons/login_with_douban_32.png" />
+                </a>
+                {% endif %}
             </div>
         </nav>
+
+<div class="hide alert alert-info text-center" role="alert">欢迎访问云书架，最智慧的云存储！账户功能即将上线，敬请期待！</div>
 
                 {% block msgbar %}{% endblock %}
                 <div class="col-md-8">
@@ -73,9 +83,8 @@
             </div>
         </div>
 
-        <script>
-        </script>
-        <script src="{{M}}/js/jquery-1.11.1.min.js"></scri>
+        {% block footer %}{% endblock %}
+        <script src="{{M}}/js/jquery-1.11.1.min.js"></script>
         <script src="{{M}}/js/bootstrap.min.js"></script>
         <script src="{{M}}/js/spin.min.js"></script>
         <script src="{{M}}/js/holder.js"></script>
@@ -95,5 +104,6 @@
             jQuery(".rating").rating({showClear: false, showCaption: false});
         </script>
         {% block script %}{% endblock %}
+        <script type="text/javascript" src="http://tajs.qq.com/stats?sId=29043744" charset="UTF-8"></script>
     </body>
 </html>
