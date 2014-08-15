@@ -15,7 +15,7 @@ from calibre.ebooks.metadata.book.base import Metadata
 class DoubanBookApi(object):
 
     def get_book(self, title):
-        API_SEARCH = "https://api.douban.com/v2/book/search?apikey=0f812f31e44e48752e838d95acead95f&q=%s"
+        API_SEARCH = "https://api.douban.com/v2/book/search?apikey=052c9ac15e9870500f85d0441bc950f0&q=%s"
         url = API_SEARCH % (title.encode('UTF-8'))
         rsp = json.loads(urlopen(url).read())
         if 'code' in rsp and rsp['code'] != 0:

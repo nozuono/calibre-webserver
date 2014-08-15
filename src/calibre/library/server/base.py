@@ -195,8 +195,8 @@ class LibraryServer(AuthServer, HtmlServer, XMLServer, OPDSServer, Cache):
                 'social.backends.douban.DoubanOAuth',
                 'social.backends.douban.DoubanOAuth2',
             ),
-            'SOCIAL_AUTH_DOUBAN_OAUTH2_KEY': '0111ff0769f613750335fd163de23a5f',
-            'SOCIAL_AUTH_DOUBAN_OAUTH2_SECRET': 'a6b3870a603ba1c0',
+            'SOCIAL_AUTH_DOUBAN_OAUTH2_KEY': '052c9ac15e9870500f85d0441bc950f0',
+            'SOCIAL_AUTH_DOUBAN_OAUTH2_SECRET': '3b524f1487999fc6',
         });
         import sys
         from jinja2 import Environment, FileSystemLoader

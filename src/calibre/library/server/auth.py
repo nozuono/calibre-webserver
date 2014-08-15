@@ -27,7 +27,7 @@ class FuckUser(Base):
     name = Column(String(100))
     email = Column(String(200))
     active = Column(Boolean, default=True)
-    admin = Column(Boolean, default=True)
+    admin = Column(Boolean, default=False)
 
     def is_active(self):
         return self.active

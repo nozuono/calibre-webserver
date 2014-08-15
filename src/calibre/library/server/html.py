@@ -55,6 +55,7 @@ class HtmlServer(object):
     '''
     def add_routes(self, connect):
         connect( '/',                       self.index)
+        connect( '/about',                  self.about)
         connect( '/book',                   self.book_list)
         connect( '/book/add',               self.book_add)
         connect( '/book/upload',            self.book_upload)
@@ -131,6 +132,10 @@ class HtmlServer(object):
         ids = self.search_for_books(name)
         books = self.db.get_data_as_dict(ids=ids)
         return self.render_book_list(books, start, sort, vars());
+
+    def about(self):
+        nav = "about"
+        return self.html_page('content_server/about.html', vars())
 
     def html_index(self):
         import random
