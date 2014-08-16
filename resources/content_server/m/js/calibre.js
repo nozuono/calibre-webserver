@@ -61,3 +61,13 @@ function update_rating(where, book_id) {
     });
 }
 
+function save_email() {
+    $.cookie("push_email", $("#id_push_email").val());
+}
+
+function load_email() {
+    console.log("load_email");
+    $("#id_push_email").val( $.cookie("push_email") );
+}
+
+
