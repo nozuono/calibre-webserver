@@ -90,6 +90,7 @@ class HtmlServer(object):
         M = "/static/m"
         db = self.db
         request = cherrypy.request
+        hostname = request.headers['Host']
         vals = dict(*args, **kwargs)
         vals.update( vars() )
         ans = T(template).render(vals)
@@ -162,6 +163,7 @@ class HtmlServer(object):
 
     @cherrypy.expose
     def book_list(self, start=0, sort='title'):
+        return self.html_page('content_server/book/all.html', vars())
         title = _('All books')
         category_name = 'books'
         ids = self.search_cache('')
@@ -324,8 +326,10 @@ class HtmlServer(object):
         title = _('Books of tag: %(name)s') % vars()
         category = "tags"
         tag_id = self.db.get_tag_id(name)
-        ids = self.db.get_books_for_category(category, tag_id)
-        books = self.db.get_data_as_dict(ids=ids)
+        ids = books = []
+        if tag_id:
+            ids = self.db.get_books_for_category(category, tag_id)
+            books = self.db.get_data_as_dict(ids=ids)
         return self.render_book_list(books, start, sort, vars());
 
     def author_list(self):
