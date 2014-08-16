@@ -536,7 +536,7 @@ class HtmlServer(object):
             raise cherrypy.InternalRedirect('/ajax/book/%d'%id)
         return self.get_format(id, fmt)
 
-    def static(self, name):
+    def static(self, name, **kwargs):
         'Serves static content'
         name = name.lower()
         fname = posixpath.basename(name)

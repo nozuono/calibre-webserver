@@ -14,6 +14,14 @@ from calibre.ebooks.metadata.book.base import Metadata
 
 class DoubanBookApi(object):
 
+    def get_book_by_isbn(self, isbn):
+        API_SEARCH = "https://api.douban.com/v2/book/isbn/%s"
+        url = API_SEARCH % isbn
+        rsp = json.loads(urlopen(url).read())
+        if 'code' in rsp and rsp['code'] != 0:
+            logging.error("******** douban API error: %d-%s **********" % (rsp['code'], rsp['msg']) )
+            return None
+
     def get_book(self, title):
         API_SEARCH = "https://api.douban.com/v2/book/search?apikey=052c9ac15e9870500f85d0441bc950f0&q=%s"
         url = API_SEARCH % (title.encode('UTF-8'))
@@ -44,7 +52,7 @@ class DoubanBookApi(object):
         mi.publisher   = book['publisher']
         mi.comments    = book['summary']
         mi.isbn        = book.get('isbn13', None)
-        mi.tags        = [ t['name'] for t in book['tags'] ][:3]
+        mi.tags        = [ t['name'] for t in book['tags'] ][:8]
         mi.rating      = int(float(book['rating']['average']))
         mi.pubdate     = self.str2date(book['pubdate'])
         mi.timestamp   = datetime.datetime.now()

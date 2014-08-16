@@ -51,6 +51,7 @@ Use the -h flag for help on the develop command.
 
 Depends
 ============
-apt-get install --without-recommends qt4-qmake make gcc g++ python-qt4 python-dev libicu-dev python-sqlite libsqlite3-dev libchm-dev libmagickwand-dev libpodofo-dev python-dateutil python-dateutil python-lxml libmagickwand-dev libqt4-dev 
+apt-get install --without-recommends qt4-qmake make gcc g++ python-qt4 python-dev libicu-dev python-sqlite libsqlite3-dev libchm-dev libmagickwand-dev libpodofo-dev python-dateutil python-dateutil python-lxml libmagickwand-dev libqt4-dev  python-sip-dev python-apsw
+sudo pip install cssselect
 
 

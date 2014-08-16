@@ -143,7 +143,7 @@
                     <button type="submit" class="btn btn-primary">Push</button>
                 </div>
             </form>
-        </div
+        </div>
     </div>
 </div>
 
@@ -170,6 +170,13 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block meta %}
+<meta name="Keywords" content="{{ title }} {% for format, size in sizes %}{{ format }} {% endfor %} 下载 推送 kindle" />
+{% if book.comments %}
+<meta name="description" content=" {{ book.comments|striptags|replace("\n", "")|replace('"', '') }}" />
+{% endif %}
 {% endblock %}
 
 {% block script %}
