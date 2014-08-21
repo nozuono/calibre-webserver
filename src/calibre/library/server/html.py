@@ -135,6 +135,7 @@ class HtmlServer(object):
         hostname = request.headers['Host']
         vals = dict(*args, **kwargs)
         vals.update( vars() )
+        cherrypy.tools.jinja2env.install_gettext_callables(_, _, newstyle=False)
         ans = cherrypy.tools.jinja2env.get_template(template).render(vals)
 
         cherrypy.response.headers['Content-Type'] = 'text/html; charset=utf-8'
