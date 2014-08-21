@@ -21,7 +21,7 @@ from calibre.library.server.utils import expose, AuthController
 from calibre.utils.mdns import publish as publish_zeroconf, \
             unpublish as unpublish_zeroconf, get_external_ip, verify_ipV4_address
 from calibre.library.server.auth import AuthServer, FuckUser, BuildAuthSession
-from calibre.library.server.html import HtmlServer
+from calibre.library.server.html import HtmlServer, build_jinja2_env
 from calibre.library.server.xml import XMLServer
 from calibre.library.server.opds import OPDSServer
 from calibre.library.server.cache import Cache
@@ -184,10 +184,10 @@ class LibraryServer(AuthServer, HtmlServer, XMLServer, OPDSServer, Cache):
             'server.thread_pool'     : opts.thread_pool,  # number of threads
             'server.shutdown_timeout': st,  # minutes
             'tools.sessions.on' : True,
-            'tools.sessions.storage_type': 'ram',
-            'tools.sessions.timeout': 600, # Session times out after 60 minutes
-            #'tools.sessions.storage_type': "file",
-            #'tools.sessions.storage_path': "/tmp/cherrypy/",
+            #'tools.sessions.storage_type': 'ram',
+            #'tools.sessions.timeout': 600, # Session times out after 60 minutes
+            'tools.sessions.storage_type': "file",
+            'tools.sessions.storage_path': "/tmp/cherrypy/",
             'SOCIAL_AUTH_USER_MODEL': 'calibre.library.server.auth.FuckUser',
             'SOCIAL_AUTH_LOGIN_URL': '/auth/',
             'SOCIAL_AUTH_LOGIN_REDIRECT_URL': '/',
@@ -198,11 +198,7 @@ class LibraryServer(AuthServer, HtmlServer, XMLServer, OPDSServer, Cache):
             'SOCIAL_AUTH_DOUBAN_OAUTH2_KEY': '052c9ac15e9870500f85d0441bc950f0',
             'SOCIAL_AUTH_DOUBAN_OAUTH2_SECRET': '3b524f1487999fc6',
         });
-        import sys
-        from jinja2 import Environment, FileSystemLoader
-        loader = FileSystemLoader(sys.resources_location)
-        env = Environment(loader=loader, extensions=['jinja2.ext.i18n'])
-        cherrypy.tools.jinja2env = env
+        cherrypy.tools.jinja2env = build_jinja2_env()
         if embedded or wsgi:
             cherrypy.config.update({'engine.SIGHUP'          : None,
                                     'engine.SIGTERM'         : None,})
@@ -253,8 +249,6 @@ class LibraryServer(AuthServer, HtmlServer, XMLServer, OPDSServer, Cache):
         user_langs = [x.value.replace('-', '_') for x in
                  cherrypy.request.headers.elements('Accept-Language')]
         sessions_on = cherrypy.request.config.get('tools.sessions.on', False)
-        if sessions_on and cherrypy.session.get('_lang_', ''):
-            user_langs.insert(0, cherrypy.session.get('_lang_', '__'))
         for lang in user_langs:
             if lang == self.last_lang:
                 return
@@ -262,8 +256,6 @@ class LibraryServer(AuthServer, HtmlServer, XMLServer, OPDSServer, Cache):
                 loc = self.all_langs[lang]
                 loc.install(unicode=True, names=('ngettext',))
                 cherrypy.response.i18n = loc
-                #if sessions_on:
-                    #cherrypy.session['_lang_'] = str(loc.locale)
                 self.last_lang = lang
                 return
 

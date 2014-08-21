@@ -6,6 +6,7 @@ __copyright__ = '2010, Kovid Goyal <kovid@kovidgoyal.net>'
 __docformat__ = 'restructuredtext en'
 
 import re, os, posixpath, cherrypy, cgi, tempfile, logging, sys, json
+from functools import wraps
 from calibre.ebooks.metadata.meta import get_metadata
 
 from urllib import urlencode
@@ -22,6 +23,7 @@ from calibre.ebooks.metadata import authors_to_string
 from calibre.ebooks.conversion.plumber import Plumber
 from calibre.library.caches import SortKeyGenerator
 from calibre.library.save_to_disk import find_plugboard
+from jinja2 import Environment, FileSystemLoader
 
 import douban
 
@@ -34,13 +36,48 @@ def day_format(value, format='%Y-%m-%d'):
     except:
         return "1990-01-01"
 
-def T(name):
-    from jinja2 import Environment, FileSystemLoader
+def csrf_protect(func):
+    def do(*args, **kwargs):
+        rtk = kwargs.pop('csrf_token', None)
+        token = cherrypy.session.get('csrf_token', None)
+        if not token or token != rtk:
+            raise cherrypy.HTTPError(403, _('Invalid CSRF Token. Please refresh the web page.'))
+        ans = func(*args, **kwargs);
+        cherrypy.response.cookie['_csrf_token'] = generate_csrf_token
+    return do
+
+def generate_csrf_token():
+    import uuid
+    ttl = cherrypy.session.get('csrf_ttl', 0)
+    if ttl < 2 or 'csrf_token' not in cherrypy.session:
+        cherrypy.session['csrf_token'] = uuid.uuid4().hex
+        cherrypy.session['csrf_ttl'] = 32
+    return cherrypy.session['csrf_token']
+
+def ttl_live(func):
+    @wraps(func)
+    def do(*args, **kwargs):
+        cherrypy.session['session_ttl'] = 12
+        return func(*args, **kwargs);
+    return do
+
+def ttl_dead(func):
+    @wraps(func)
+    def do(*args, **kwargs):
+        ttl = cherrypy.session.get('session_ttl', 0)
+        cherrypy.session['session_ttl'] = ttl - 1
+        if ttl < 2:
+            raise cherrypy.HTTPError(403, _('Please re-visit the web page.'))
+        return func(*args, **kwargs);
+    return do
+
+def build_jinja2_env():
     loader = FileSystemLoader(sys.resources_location)
     env = Environment(loader=loader, extensions=['jinja2.ext.i18n'])
     env.install_gettext_callables(_, _, newstyle=False)
     env.filters['day'] = day_format
-    return env.get_template(name)
+    env.globals['csrf_token'] = generate_csrf_token
+    return env
 
 def JsonResponse(func):
     def do(*args, **kwrags):
@@ -79,11 +116,16 @@ class HtmlServer(object):
         connect( '/search',                 self.search_book)
         connect( '/setting',                self.setting_view)
         connect( '/setting/save',           self.setting_save)
+        connect( '/debug',                  self.html_debug)
 
         connect(     '/get/{fmt}/{id}', self.get,
                 conditions=dict(method=["GET", "HEAD"]))
         connect(  '/static/{name:.*?}', self.static,
                 conditions=dict(method=["GET", "HEAD"]))
+
+    def html_debug(self, **kwargs):
+        p = dir(cherrypy.request)
+        return json.dumps(p)
 
     def html_page(self, template, *args, **kwargs):
         url_prfix = self.opts.url_prefix
@@ -93,7 +135,7 @@ class HtmlServer(object):
         hostname = request.headers['Host']
         vals = dict(*args, **kwargs)
         vals.update( vars() )
-        ans = T(template).render(vals)
+        ans = cherrypy.tools.jinja2env.get_template(template).render(vals)
 
         cherrypy.response.headers['Content-Type'] = 'text/html; charset=utf-8'
         #updated = self.db.last_modified()
@@ -185,6 +227,7 @@ class HtmlServer(object):
         vars_.update(vars())
         return self.html_page('content_server/book/list.html', vars_)
 
+    @ttl_live
     def book_detail(self, id, status="", msg=""):
         book_id = int(id)
         books = self.db.get_data_as_dict(ids=[book_id])
@@ -253,6 +296,7 @@ class HtmlServer(object):
         #self.db.delete_book(int(id))
         raise cherrypy.HTTPRedirect("/book", 302)
 
+    @ttl_dead
     def book_download(self, id, fmt):
         fmt = fmt.lower()
         book_id = int(id)
@@ -273,7 +317,7 @@ class HtmlServer(object):
         return self.html_page('content_server/book/add.html', vars())
 
     @cherrypy.expose
-    def book_upload(self, ebook_file=None):
+    def book_upload(self, ebook_file=None, generate_fmt=False):
         from calibre.ebooks.metadata import MetaInformation
         cherrypy.response.timeout = 3600
 

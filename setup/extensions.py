@@ -419,7 +419,8 @@ class Build(Command):
             if not os.path.exists(self.d(dest)):
                 os.makedirs(self.d(dest))
             self.info('\n####### Building extension', ext.name, '#'*7)
-            self.build(ext, dest)
+            try: self.build(ext, dest)
+            except: pass
 
     def dest(self, ext):
         ex = '.pyd' if iswindows else '.so'
