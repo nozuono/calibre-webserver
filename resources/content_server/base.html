@@ -41,11 +41,11 @@
                     <button type="submit" class="btn btn-default">{{ gettext("Search") }}</button>
                 </form>
                 <a class="pull-right btn navbar-btn btn-primary" href="/book/add"><span class="glyphicon glyphicon-cloud-upload"></span> {{ gettext("Upload Book") }}</a>
-                {% if hostname == "beta.talebook.org" %}
                 {% if request.user %}
                 <a class="pull-right btn navbar-btn " href="#"><img src="http://img3.douban.com/pics/douban-icons/favicon_16x16.png" /> {{ request.user.username }}</a>
                 {% else %}
-                <a class="pull-right btn" style="margin-top: 1px" target="_blank" href="/auth/login/douban-oauth2">
+                {% if hostname == "beta.talebook.org" %}
+                <a class="pull-right btn" style="margin-top: 1px" target="_blank" href="http://talebook.org/auth/login/douban-oauth2">
                     <img src="http://img3.douban.com/pics/douban-icons/login_with_douban_32.png" />
                 </a>
                 {% endif %}

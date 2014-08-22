@@ -114,8 +114,6 @@ class HtmlServer(object):
         connect( '/rating',                 self.rating_list)
         connect( '/rating/{name}',          self.rating_detail)
         connect( '/search',                 self.search_book)
-        connect( '/setting',                self.setting_view)
-        connect( '/setting/save',           self.setting_save)
         connect( '/debug',                  self.html_debug)
 
         connect(     '/get/{fmt}/{id}', self.get,
@@ -389,9 +387,11 @@ class HtmlServer(object):
     def author_detail(self, name, start=0, sort="title"):
         title = _('Books of author: %(name)s') % vars()
         category = "authors"
+        ids = books = []
         author_id = self.db.get_author_id(name)
-        ids = self.db.get_books_for_category(category, author_id)
-        books = self.db.get_data_as_dict(ids=ids)
+        if author_id:
+            ids = self.db.get_books_for_category(category, author_id)
+            books = self.db.get_data_as_dict(ids=ids)
         return self.render_book_list(books, start, sort, vars());
 
     @cherrypy.expose
@@ -454,27 +454,12 @@ class HtmlServer(object):
     def rating_detail(self, name, start=0, sort="title"):
         title = _('Books of rating: %(name)s') % vars()
         category = "rating"
+        ids = books = []
         rating_id = self.db.get_rating_id(name)
-        ids = self.db.get_books_for_category(category, rating_id)
-        books = self.db.get_data_as_dict(ids=ids)
+        if rating_id:
+            ids = self.db.get_books_for_category(category, rating_id)
+            books = self.db.get_data_as_dict(ids=ids)
         return self.render_book_list(books, start, sort, vars());
-
-    def setting_view(self):
-        nav = "setting"
-        title = _('Setting')
-        msg = None
-        prefs = self.db.prefs
-        return self.html_page('content_server/setting/view.html', vars())
-
-    @cherrypy.expose
-    def setting_save(self, share_kindle="", allow_admin=False, allow_delete=False):
-        nav = "setting"
-        title = _('Setting')
-        self.db.prefs.set('share_kindle', share_kindle)
-        self.db.prefs.set('allow_admin', allow_admin)
-        self.db.prefs.set('allow_delete', allow_delete)
-        msg = _('Saved success!')
-        return self.html_page('content_server/setting/view.html', vars())
 
     @cherrypy.expose
     @cherrypy.tools.allow(methods=['POST'])
