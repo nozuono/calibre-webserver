@@ -1094,6 +1094,10 @@ ALTER TABLE books ADD COLUMN isbn TEXT DEFAULT "" COLLATE NOCASE;
         return [ (i[0], i[1]) for i in \
                 self.conn.get('SELECT id, name FROM tags')]
 
+    def all_tags_with_count(self):
+        return [ (i[0], i[1], i[2]) for i in \
+                self.conn.get('SELECT id, name, count(distinct book) as count FROM tags left join books_tags_link on tags.id = books_tags_link.tag group by tags.id')]
+
     def all_titles(self):
         return [ (i[0], i[1]) for i in \
                 self.conn.get('SELECT id, title FROM books')]

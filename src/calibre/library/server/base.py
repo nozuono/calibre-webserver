@@ -159,7 +159,7 @@ class LibraryServer(AuthServer, HtmlServer, XMLServer, OPDSServer, Cache):
         self.all_langs = dict(get_all_translators())
         cherrypy.request.hooks.attach('before_handler', self.update_lang)
         cherrypy.request.hooks.attach('before_handler', self.load_user)
-        cherrypy.request.hooks.attach('on_end_resource', self.save_session)
+        #cherrypy.request.hooks.attach('on_end_resource', self.save_session)
 
         #cherrypy.tools.authenticate = cherrypy.Tool('before_handler', self.load_user)
         #cherrypy.tools.session = cherrypy.Tool('on_end_resource', self.save_session)
@@ -168,7 +168,7 @@ class LibraryServer(AuthServer, HtmlServer, XMLServer, OPDSServer, Cache):
 
         self.set_database(db)
 
-        st = 0.1 if opts.develop else 1
+        st = 1 if opts.develop else 1
 
         cherrypy.config.update({
             'log.screen'             : opts.develop,

@@ -1740,6 +1740,10 @@ class Cache(object):
     def lookup_by_uuid(self, uuid):
         return self.fields['uuid'].table.lookup_by_uuid(uuid)
 
+    @read_api
+    def all_tags_with_count(self):
+        return self.backend.all_tags_with_count()
+
     @write_api
     def delete_custom_column(self, label=None, num=None):
         self.backend.delete_custom_column(label, num)

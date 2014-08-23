@@ -1617,6 +1617,12 @@ class DB(object):
         options = [(book_id, fmt.upper(), buffer(cPickle.dumps(data, -1))) for book_id, data in options.iteritems()]
         self.executemany('INSERT OR REPLACE INTO conversion_options(book,format,data) VALUES (?,?,?)', options)
 
+    def all_tags_with_count(self):
+        return [ (i[0], i[1], i[2]) for i in \
+                self.conn.get('''SELECT tags.id, name, count(distinct book) as count
+                FROM tags left join books_tags_link on tags.id = books_tags_link.tag
+                group by tags.id''')]
+
     def get_top_level_move_items(self, all_paths):
         items = set(os.listdir(self.library_path))
         paths = set(all_paths)

@@ -102,7 +102,7 @@
         {% endfor %}
     </div>
 
-    {% if request.user.is_admin %}
+    {% if request.user.is_admin or hostname == "beta.talebook.org" %}
     <span class="legend">{{ gettext("Edit") }}</span>
     <div class="list-group">
         <a href="#" onclick="return bind_book_editable({{book.id}})" class="list-group-item"><span class="glyphicon glyphicon-cog"></span> {{ gettext("Manual edit") }}</a>

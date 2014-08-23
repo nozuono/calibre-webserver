@@ -241,7 +241,9 @@ class HtmlServer(object):
     def do_book_update(self, id):
         book_id = int(id)
         mi = self.db.get_metadata(book_id, index_is_id=True)
-        douban_mi = douban.get_douban_metadata(mi.title)
+        douban_mi = douban.get_douban_metadata(mi)
+        if not douban_mi:
+            return book_id
         if mi.cover_data[0]:
             douban_mi.cover_data = None
         mi.smart_update(douban_mi, replace_metadata=True)
@@ -290,9 +292,9 @@ class HtmlServer(object):
         self.db.set_metadata(book_id, mi)
         return json.dumps({'ecode': 0, 'msg': _("edit OK")})
 
-    @cherrypy.tools.allow(methods=['POST'])
+    #@cherrypy.tools.allow(methods=['POST'])
     def book_delete(self, id):
-        #self.db.delete_book(int(id))
+        self.db.delete_book(int(id))
         raise cherrypy.HTTPRedirect("/book", 302)
 
     @ttl_dead
@@ -361,7 +363,13 @@ class HtmlServer(object):
     def tag_list(self):
         title = _('All tags')
         category = "tags"
-        tags = self.db.all_tags2()
+        tags = self.db.all_tags_with_count()
+        hot_tags = []
+        for tag in tags:
+            if tag[2] < 5: continue
+            hot_tags.append( tag )
+        hot_tags.sort(lambda x,y: cmp(y[2], x[2]))
+        tags = hot_tags
         return self.html_page('content_server/tag/list.html', vars())
 
     @cherrypy.expose
@@ -428,9 +436,6 @@ class HtmlServer(object):
     @cherrypy.expose
     def pub_books_update(self, name):
         cherrypy.response.timeout = 3600
-        category = "authors"
-        author_id = self.db.get_author_id(name)
-        ids = self.db.get_books_for_category(category, author_id)
         category = "publisher"
         publisher_id = self.db.get_publisher_id(name)
         if publisher_id:

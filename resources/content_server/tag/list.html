@@ -2,12 +2,9 @@
 {% block content %}
 <span class="legend">{{title}}</span>
 
-<ul class="list-inline">
-{% for id, name in tags %}
-    <li class="lead"><a href="/tag/{{name|urlencode}}">{{name}}</a></li>
+{% for id, name, count in tags %}
+<div class="col-sm-3 col-xs-6"><a href="/tag/{{name|urlencode}}">{{name}}</a><span class="text-muted">({{count}})</span></div>
 {% endfor %}
-</ul>
-
 
 {% endblock %}
 

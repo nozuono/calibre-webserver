@@ -851,6 +851,7 @@ for func, field in {'all_authors':'authors', 'all_titles':'title', 'all_tags2':'
         return func
     setattr(LibraryDatabase, func, MT(getter(field)))
 
+LibraryDatabase.all_tags_with_count = MT(lambda self: list(self.new_api.all_tags_with_count()))
 LibraryDatabase.all_tags = MT(lambda self: list(self.all_tag_names()))
 LibraryDatabase.get_all_identifier_types = MT(lambda self: list(self.new_api.fields['identifiers'].table.all_identifier_types()))
 LibraryDatabase.get_authors_with_ids = MT(
