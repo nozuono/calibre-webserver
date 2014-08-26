@@ -31,12 +31,12 @@
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav">
                     <li {%if not nav %}class="active"{%endif%} ><a href="/">{{ gettext("Library")}}</a></li>
-                    <li ><a href="/blog">{{ gettext("Blog")}}</a></li>
+                    <li ><a target="_blank" href="/blog">{{ gettext("Blog")}}</a></li>
                     <li {%if nav == "about" %}class="active"{%endif%} ><a href="/about">{{ gettext("About")}}</a></li>
                 </ul>
                 <form class="hidden-xs navbar-form navbar-left" action="/search" role="search">
                     <div class="form-group">
-                        <input type="text" name="name" class="form-control" placeholder="{{ gettext('Search book') }}">
+                        <input type="text" name="name" class="form-control" placeholder="{{ gettext('书名或关键字') }}">
                     </div>
                     <button type="submit" class="btn btn-default">{{ gettext("Search") }}</button>
                 </form>
