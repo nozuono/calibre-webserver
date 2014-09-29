@@ -187,7 +187,7 @@ class LibraryServer(AuthServer, HtmlServer, XMLServer, OPDSServer, Cache):
             #'tools.sessions.storage_type': 'ram',
             'tools.sessions.timeout': 60000, # Session times out after 60 minutes
             'tools.sessions.storage_type': "file",
-            'tools.sessions.storage_path': "/tmp/cherrypy/",
+            'tools.sessions.storage_path': "/data/tmp/cherrypy/",
             'SOCIAL_AUTH_USER_MODEL': 'calibre.library.server.auth.FuckUser',
             'SOCIAL_AUTH_LOGIN_URL': '/auth/',
             'SOCIAL_AUTH_LOGIN_REDIRECT_URL': '/',
