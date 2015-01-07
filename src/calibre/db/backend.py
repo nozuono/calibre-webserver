@@ -1119,7 +1119,8 @@ class DB(object):
         if not author:
             author = ascii_filename(_('Unknown')).decode(
                     'ascii', 'replace')
-        return '%s/%s%s' % (author, title, book_id)
+        first_char = author[0].upper()
+        return '%s/%s/%s%s' % (first_char, author, title, book_id)
 
     def construct_file_name(self, book_id, title, author, extlen):
         '''
