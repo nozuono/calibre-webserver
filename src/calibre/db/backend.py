@@ -1111,11 +1111,7 @@ class DB(object):
         l = self.PATH_LIMIT - (len(book_id) // 2) - 2
         author = ascii_filename(author)[:l].decode('ascii', 'replace')
         title  = ascii_filename(title)[:l].decode('ascii', 'replace')
-        try:
-            while author[-1] in (' ', '.'):
-                author = author[:-1]
-        except IndexError:
-            author = ''
+        author = author.replace("_", " ").replace(" .", " ").replace("  ", " ").strip(" ").strip(".")
         if not author:
             author = ascii_filename(_('Unknown')).decode(
                     'ascii', 'replace')
@@ -1137,8 +1133,7 @@ class DB(object):
         author = ascii_filename(author)[:l].decode('ascii', 'replace')
         title  = ascii_filename(title)[:l].decode('ascii', 'replace')
         name   = title + ' - ' + author
-        while name.endswith('.'):
-            name = name[:-1]
+        name   = name.replace("_", " ").replace(" .", " ").replace("  ", " ").strip(" ").strip(".")
         if not name:
             name = ascii_filename(_('Unknown')).decode('ascii', 'replace')
         return name
