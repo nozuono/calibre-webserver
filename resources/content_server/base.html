@@ -55,6 +55,13 @@
 
 <div class="hide alert alert-info text-center" role="alert">欢迎访问云书架，最智慧的云存储！账户功能即将上线，敬请期待！</div>
 
+                {% for v in messages %}
+                <div class="alert alert-{{v.status}} alert-dismissible" role="alert">
+                    <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    {{ v.msg }}
+                </div>
+                {% endfor %}
+
                 {% block msgbar %}{% endblock %}
                 <div class="col-md-8">
                     <div class="visible-xs-block phone-search">
@@ -83,6 +90,7 @@
                     {{ gettext("Power by <a href='http://www.calibre-ebook.com'>Calibre</a>.") }}
                     {{ gettext("Develop by Kovid Goyal and Rex Liao.<br/>") }}
                     {{ gettext("Thanks to all contributors.") }}
+                    <br/>粤ICP备14073162号
                     </p>
                 </div>
                 <p>&nbsp;</p>

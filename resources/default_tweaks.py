@@ -572,3 +572,7 @@ restrict_output_formats = None
 # numbers.
 # The value can be between 50 and 99
 content_server_thumbnail_compression_quality = 75
+
+smtp_username = None
+smtp_password = None
+

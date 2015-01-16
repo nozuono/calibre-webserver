@@ -184,3 +184,31 @@ def cookie_max_age_to_expires(max_age):
     gmt_expiration_time = time.gmtime(time.time() + max_age)
     return cookie_time_fmt(gmt_expiration_time)
 
+
+import Queue, threading, functools
+_q = Queue.Queue()
+
+def do_work():
+    while True:
+        v = _q.get()
+        if not isinstance(v, tuple):
+            continue
+        elif len(v) != 3:
+            continue
+        func, args, kwargs = v
+        func(*args, **kwargs)
+
+
+def run_workers():
+    for i in range(10):
+        t = threading.Thread(name="worker", target=do_work)
+        t.setDaemon(True)
+        t.start()
+
+def background(func):
+    @functools.wraps(func)
+    def run(*args, **kwargs):
+        _q.put( (func, args, kwargs) )
+    return run
+
+

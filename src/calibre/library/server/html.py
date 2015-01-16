@@ -26,10 +26,12 @@ from calibre.library.save_to_disk import find_plugboard
 from jinja2 import Environment, FileSystemLoader
 
 import douban
+from utils import background
 
 plugboard_content_server_value = 'content_server'
 plugboard_content_server_formats = ['epub']
 
+messages = []
 
 BOOKNAV = (
 (
@@ -83,8 +85,6 @@ u"神经网络", u"程序",
 
 ),
 )
-
-
 
 def day_format(value, format='%Y-%m-%d'):
     try:
@@ -182,6 +182,7 @@ class HtmlServer(object):
         return json.dumps(p)
 
     def html_page(self, template, *args, **kwargs):
+        global messages
         url_prfix = self.opts.url_prefix
         M = "/static/m"
         db = self.db
@@ -189,6 +190,8 @@ class HtmlServer(object):
         hostname = request.headers['Host']
         vals = dict(*args, **kwargs)
         vals.update( vars() )
+        vals['messages'] = messages
+        messages = []
         cherrypy.tools.jinja2env.install_gettext_callables(_, _, newstyle=False)
         ans = cherrypy.tools.jinja2env.get_template(template).render(vals)
 
@@ -412,17 +415,20 @@ class HtmlServer(object):
             raise cherrypy.HTTPRedirect('/book/%d'%book_id)
 
         fpaths = [fpath]
-        if generate_fmt:
-            # convert another format
-            new_fmt = {'epub': 'mobi', 'mobi': 'epub'}.get(fmt)
-            new_path = '/tmp/calibre-tmp.'+new_fmt
-            log = Log()
-            plumber = Plumber(fpath, new_path, log)
-            plumber.run()
-            fpaths.append( new_path )
-
+        self.generate_books(mi, fpath, fmt)
         book_id = self.db.import_book(mi, fpaths )
+        messages.append( {'status': 'success', 'msg': _("import books success")})
         raise cherrypy.HTTPRedirect('/book/%d'%book_id)
+
+    @background
+    def generate_books(self, mi, fpath, fmt):
+        # convert another format
+        new_fmt = {'epub': 'mobi', 'mobi': 'epub'}.get(fmt)
+        new_path = '/tmp/calibre-tmp.'+new_fmt
+        log = Log()
+        plumber = Plumber(fpath, new_path, log)
+        plumber.run()
+        self.add_books([new_paths], [new_fmt], mi, add_duplicates=False)
 
     def tag_list(self):
         title = _('All tags')
@@ -546,18 +552,29 @@ class HtmlServer(object):
         for fmt in ['mobi', 'azw', 'pdf']:
             fpath = book.get("fmt_%s" % fmt, None)
             if fpath:
-                return self.do_send_mail(book, mail_to, fmt, fpath)
-
+                self.do_send_mail(book, mail_to, fmt, fpath)
+                messages.append( {"status": "success", "msg": _("Server is pushing book.")})
+                raise cherrypy.HTTPRedirect("/book/%d"%book['id'], 302)
         # we do no have formats for kindle
         if 'fmt_epub' not in book:
             raise cherrypy.HTTPError(404, _("Sorry, there's no available format for kindle"))
+        self.convert_book(book, mail_to)
+        messages.append( {"status": "success", "msg": _("Server is pushing book.")})
+        raise cherrypy.HTTPRedirect("/book/%d"%book['id'], 302)
+
+    @background
+    def convert_book(self, book, mail_to=None):
         fmt = 'mobi'
         fpath = '/tmp/%s.%s' % (ascii_filename(book['title']), fmt)
         log = Log()
-        plumber = Plumber(book['fmp_epub'], fpath, log)
+        plumber = Plumber(book['fmt_epub'], fpath, log)
         plumber.run()
-        return self.do_send_mail(book, mail_to, fmt, fpath)
+        self.db.add_format(book['id'], fmt, open(fpath, "rb"), index_is_id=True)
+        if mail_to:
+            self.do_send_mail(book, mail_to, fmt, fpath)
+        return
 
+    @background
     def do_send_mail(self, book, mail_to, fmt, fpath):
         body = open(fpath).read()
 
@@ -573,7 +590,7 @@ class HtmlServer(object):
             mt = 'application/octet-stream'
 
         # send mail
-        mail_from = 'mailer@calibre-ebook.com'
+        mail_from = 'calibre@talebook.org'
         mail_subject = _('Book from Calibre: %(title)s') % vars()
         mail_body = _('We Send this book to your kindle.')
         status = msg = ""
@@ -582,7 +599,10 @@ class HtmlServer(object):
                     text = mail_body, attachment_data = body,
                     attachment_type = mt, attachment_name = fname
                     )
-            sendmail(msg, from_=mail_from, to=[mail_to], timeout=30)
+            sendmail(msg, from_=mail_from, to=[mail_to], timeout=30,
+                    username=tweaks['smtp_username'],
+                    password=tweaks['smtp_password']
+                    )
             status = "success"
             msg = _('Send to kindle success!! email: %(mail_to)s') % vars()
         except:
@@ -591,12 +611,8 @@ class HtmlServer(object):
             cherrypy.log.error(traceback.format_exc())
             status = "danger"
             msg = traceback.format_exc()
-
-        title = _('Send to kindle')
-        q = urlencode({'status': status, 'msg': msg})
-        raise cherrypy.HTTPRedirect("/book/%d?%s"%(book['id'],q), 302)
-        #raise cherrypy.InternalRedirect('/book/%d'%book['id'], q)
-        #return self.html_page('content_server/share/email.html', vars())
+        messages.append( {'status': status, 'msg': msg})
+        return
 
 
     # Utility methods {{{

@@ -120,6 +120,8 @@ def main(args=sys.argv):
         return 1
     db = LibraryDatabase(os.path.expanduser(opts.with_library))
     server = LibraryServer(db, opts, show_tracebacks=opts.develop)
+    import utils
+    utils.run_workers()
     server.start()
     return 0
 
