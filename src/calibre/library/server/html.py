@@ -11,6 +11,7 @@ from calibre.ebooks.metadata.meta import get_metadata
 
 from urllib import urlencode
 from calibre import fit_image, guess_type
+from calibre.utils.config import tweaks
 from calibre.utils.date import fromtimestamp
 from calibre.utils.smtp import sendmail, create_mail
 from calibre.utils.logging import Log
@@ -127,6 +128,8 @@ def ttl_dead(func):
         return func(*args, **kwargs);
     return do
 
+def add_msg(status, msg):
+    messages.append( {'status': status, 'msg': msg})
 def build_jinja2_env():
     loader = FileSystemLoader(sys.resources_location)
     env = Environment(loader=loader, extensions=['jinja2.ext.i18n'])
@@ -417,7 +420,7 @@ class HtmlServer(object):
         fpaths = [fpath]
         self.generate_books(mi, fpath, fmt)
         book_id = self.db.import_book(mi, fpaths )
-        messages.append( {'status': 'success', 'msg': _("import books success")})
+        add_msg('success', _("import books success"))
         raise cherrypy.HTTPRedirect('/book/%d'%book_id)
 
     @background
@@ -553,13 +556,13 @@ class HtmlServer(object):
             fpath = book.get("fmt_%s" % fmt, None)
             if fpath:
                 self.do_send_mail(book, mail_to, fmt, fpath)
-                messages.append( {"status": "success", "msg": _("Server is pushing book.")})
+                add_msg( "success", _("Server is pushing book."))
                 raise cherrypy.HTTPRedirect("/book/%d"%book['id'], 302)
         # we do no have formats for kindle
         if 'fmt_epub' not in book:
             raise cherrypy.HTTPError(404, _("Sorry, there's no available format for kindle"))
         self.convert_book(book, mail_to)
-        messages.append( {"status": "success", "msg": _("Server is pushing book.")})
+        add_msg( "success", _("Server is pushing book."))
         raise cherrypy.HTTPRedirect("/book/%d"%book['id'], 302)
 
     @background
@@ -590,7 +593,7 @@ class HtmlServer(object):
             mt = 'application/octet-stream'
 
         # send mail
-        mail_from = 'calibre@talebook.org'
+        mail_from = tweaks['smtp_username']
         mail_subject = _('Book from Calibre: %(title)s') % vars()
         mail_body = _('We Send this book to your kindle.')
         status = msg = ""
@@ -611,7 +614,7 @@ class HtmlServer(object):
             cherrypy.log.error(traceback.format_exc())
             status = "danger"
             msg = traceback.format_exc()
-        messages.append( {'status': status, 'msg': msg})
+        add_msg(status, msg)
         return
 
 
