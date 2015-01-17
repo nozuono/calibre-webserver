@@ -6,7 +6,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from social.utils import setting_name, module_member
 from social.actions import do_auth, do_complete, do_disconnect
-from social.apps.cherrypy_app.utils import strategy
+from social.apps.cherrypy_app.utils import psa
 
 
 Base = declarative_base()
@@ -47,27 +47,25 @@ class AuthServer(object):
         return "Hello, %s" % u.username
 
     @cherrypy.expose
-    @strategy('/auth/complete/%(backend)s')
+    @psa('/auth/complete/%(backend)s')
     def login(self, backend):
-        ret = do_auth(self.strategy)
-        cherrypy.log.error("session=" + repr(cherrypy.session.items()) )
-        return ret
+        return do_auth(self.backend)
 
     @cherrypy.expose
-    @strategy('/auth/complete/%(backend)s')
+    @psa('/auth/complete/%(backend)s')
     def complete(self, backend, *args, **kwargs):
         login = cherrypy.config.get(setting_name('LOGIN_METHOD'))
         do_login = module_member(login) if login else self.do_login
         user = getattr(cherrypy.request, 'user', None)
-        return do_complete(self.strategy, do_login, user=user, *args, **kwargs)
+        return do_complete(self.backend, do_login, user=user, *args, **kwargs)
 
     @cherrypy.expose
     def disconnect(self, backend, association_id=None):
         user = getattr(cherrypy.request, 'user', None)
-        return do_disconnect(self.strategy, user, association_id)
+        return do_disconnect(self.backend, user, association_id)
 
-    def do_login(self, strategy, user, social_user):
-        strategy.session_set('user_id', user.id)
+    def do_login(self, backend, user, social_user):
+        backend.strategy.session_set('user_id', user.id)
 
 if __name__ == '__main__':
     cherrypy.config.update({

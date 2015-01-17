@@ -185,7 +185,7 @@ class LibraryServer(AuthServer, HtmlServer, XMLServer, OPDSServer, Cache):
             'server.shutdown_timeout': st,  # minutes
             'tools.sessions.on' : True,
             #'tools.sessions.storage_type': 'ram',
-            'tools.sessions.timeout': 60000, # Session times out after 60 minutes
+            'tools.sessions.timeout': 600, # Session times out after 60 minutes
             'tools.sessions.storage_type': "file",
             'tools.sessions.storage_path': "/data/tmp/cherrypy/",
             'SOCIAL_AUTH_USER_MODEL': 'calibre.library.server.auth.FuckUser',
@@ -194,9 +194,15 @@ class LibraryServer(AuthServer, HtmlServer, XMLServer, OPDSServer, Cache):
             'SOCIAL_AUTH_AUTHENTICATION_BACKENDS': (
                 'social.backends.douban.DoubanOAuth',
                 'social.backends.douban.DoubanOAuth2',
+                'social.backends.qq.QQOAuth2',
+                'social.backends.weibo.WeiboOAuth2',
             ),
-            'SOCIAL_AUTH_DOUBAN_OAUTH2_KEY': '052c9ac15e9870500f85d0441bc950f0',
+            'SOCIAL_AUTH_DOUBAN_OAUTH2_KEY':    '052c9ac15e9870500f85d0441bc950f0',
             'SOCIAL_AUTH_DOUBAN_OAUTH2_SECRET': '3b524f1487999fc6',
+            'SOCIAL_AUTH_WEIBO_KEY':     '1781460725',
+            'SOCIAL_AUTH_WEIBO_SECRET':  '79a4089f5ad8bd57b4ec1e34e731bf2f',
+            'SOCIAL_AUTH_QQ_KEY':        '101187047',
+            'SOCIAL_AUTH_QQ_SECRET':     '31615d8c5034bb3b27c720ae44cdad7d',
         });
         cherrypy.tools.jinja2env = build_jinja2_env()
         if embedded or wsgi:

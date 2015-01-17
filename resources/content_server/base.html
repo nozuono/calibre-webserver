@@ -7,6 +7,8 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="Keywords" content="在线 电子书 下载 推送 kindle epub mobi" />
+        <meta name="description" content="这是个安静读书的地方。在线阅读Epub/Mobi/Pdf/Azw3等格式的电子书，也支持下载或推送到Kindle设备里。" />
         <link href="{{M}}/css/bootstrap.min.css" rel="stylesheet">
         <link href="{{M}}/css/star-rating.css" rel="stylesheet">
         <link href="{{M}}/css/calibre.css" rel="stylesheet">
@@ -44,11 +46,7 @@
                 {% if request.user %}
                 <a class="pull-right btn navbar-btn " href="#"><img src="http://img3.douban.com/pics/douban-icons/favicon_16x16.png" /> {{ request.user.username }}</a>
                 {% else %}
-                {% if hostname == "beta.talebook.org" %}
-                <a class="pull-right btn" style="margin-top: 1px" target="_blank" href="http://talebook.org/auth/login/douban-oauth2">
-                    <img src="http://img3.douban.com/pics/douban-icons/login_with_douban_32.png" />
-                </a>
-                {% endif %}
+                <!--<a class="pull-right btn navbar-btn " href="/signin"><span class="glyphicon glyphicon-cloud-upload"></span> {{ gettext("Sign In") }}</a>-->
                 {% endif %}
             </div>
         </nav>

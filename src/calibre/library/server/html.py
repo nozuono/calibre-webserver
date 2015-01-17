@@ -152,6 +152,7 @@ class HtmlServer(object):
     def add_routes(self, connect):
         connect( '/',                       self.index)
         connect( '/about',                  self.about)
+        connect( '/signin',                 self.signin)
         connect( '/book',                   self.book_list)
         connect( '/book/add',               self.book_add)
         connect( '/book/upload',            self.book_upload)
@@ -195,6 +196,10 @@ class HtmlServer(object):
         vals.update( vars() )
         vals['messages'] = messages
         messages = []
+        if request.user:
+            u = request.user
+            print dir(request), repr(u), u.metadata, dir(u.metadata)
+            #print dir(request.user.social_auth)
         cherrypy.tools.jinja2env.install_gettext_callables(_, _, newstyle=False)
         ans = cherrypy.tools.jinja2env.get_template(template).render(vals)
 
@@ -205,6 +210,9 @@ class HtmlServer(object):
         if isinstance(ans, unicode):
             ans = ans.encode('utf-8')
         return ans
+
+    def signin(self, **kwrags):
+        return self.html_page('content_server/signin.html', vars())
 
     def index(self, **kwargs):
         'The / URL'
